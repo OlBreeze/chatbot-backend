@@ -39,7 +39,7 @@ app.post('/api/chat', async (req, res) => {
             .filter((msg) => msg.sender === 'user' || msg.sender === 'bot')
             .map((msg) => ({
                 role: msg.sender === 'user' ? 'user' : 'model',
-                parts: [{ text: msg.text }], // 🩹 ключевая правка
+                parts: [{ text: msg.text }],
             }));
 
         if (history.length > 0 && history[0].role !== 'user') {
