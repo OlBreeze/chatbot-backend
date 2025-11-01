@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-// const OpenAI = require('openai');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const app = express();
@@ -11,17 +10,7 @@ const port = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Инициализация OpenAI
-// const openai = new OpenAI({
-//     apiKey: process.env.OPENAI_API_KEY
-// });
-
 // Инициализация Gemini
-require('dotenv').config();
-
-app.use(cors());
-app.use(express.json());
-
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 app.post('/api/chat', async (req, res) => {
@@ -32,22 +21,57 @@ app.post('/api/chat', async (req, res) => {
             return res.status(400).json({ error: 'Messages array is required' });
         }
 
-        // const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-pro' });
+        // 🔍 Логирование для отладки
+        console.log('📩 Received messages:', messages.length);
+        const systemMsg = messages.find(msg => msg.sender === 'system');
+        console.log('🔧 System message found:', !!systemMsg);
+        if (systemMsg) {
+            console.log('📝 System instruction length:', systemMsg.text.length);
+        }
 
-        const history = messages
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+
+        // Извлекаем системный промпт (если есть)
+        const systemMessage = messages.find(msg => msg.sender === 'system');
+
+        // Формируем историю БЕЗ системного сообщения
+        const regularMessages = messages.filter((msg) => msg.sender !== 'system');
+
+        const history = regularMessages
             .filter((msg) => msg.sender === 'user' || msg.sender === 'bot')
             .map((msg) => ({
                 role: msg.sender === 'user' ? 'user' : 'model',
                 parts: [{ text: msg.text }],
             }));
 
+        // Убираем последнее сообщение пользователя из истории (оно будет отправлено отдельно)
+        const lastUserMessage = messages[messages.length - 1].text;
+        if (history.length > 0 && history[history.length - 1].role === 'user') {
+            history.pop();
+        }
+
+        // 🔥 НОВЫЙ ПОДХОД: Если есть системный промпт, добавляем его как первое взаимодействие
+        if (systemMessage && history.length === 0) {
+            // Добавляем системный контекст как первое сообщение пользователя
+            history.push({
+                role: 'user',
+                parts: [{ text: systemMessage.text }]
+            });
+            // Добавляем подтверждение от модели
+            history.push({
+                role: 'model',
+                parts: [{ text: 'Understood. I will assist you based on your professional background and experience.' }]
+            });
+        }
+
+        // Проверяем, что история не начинается с ответа модели
         if (history.length > 0 && history[0].role !== 'user') {
             history.shift();
         }
 
+        console.log('📊 Final history length:', history.length);
+
         const chat = await model.startChat({ history });
-        const lastUserMessage = messages[messages.length - 1].text;
         const result = await chat.sendMessage(lastUserMessage);
         const response = result.response.text();
 
