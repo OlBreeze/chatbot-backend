@@ -29,7 +29,8 @@ app.post('/api/chat', async (req, res) => {
             console.log('📝 System instruction length:', systemMsg.text.length);
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+        // const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }); //gemini-1.5-flash
+        const model = genAI.getGenerativeModel({model: 'gemini-1.5-flash'}); //gemini-1.5-flash
 
         // Извлекаем системный промпт (если есть)
         const systemMessage = messages.find(msg => msg.sender === 'system');
