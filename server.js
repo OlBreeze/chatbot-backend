@@ -31,7 +31,7 @@ app.post('/api/chat', async (req, res) => {
 
         // const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' }); //gemini-1.5-flash
         // const model = genAI.getGenerativeModel({model: 'gemini-1.5-flash'});
-        const model = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'models/gemini-2.5-flash' });
 
         // Извлекаем системный промпт (если есть)
         const systemMessage = messages.find(msg => msg.sender === 'system');
